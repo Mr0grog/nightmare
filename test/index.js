@@ -189,7 +189,7 @@ describe('Nightmare', function () {
     });
 
     it('should fail if navigating to an unknown protocol', function(done) {
-      nightmare.goto('fake-protocol://blahblahblah')
+      nightmare.goto('fake-test-protocol://blahblahblah')
         .then(function() {
           done(new Error('Navigation to an invalid protocol succeeded'));
         })
@@ -1379,3 +1379,25 @@ chai.Assertion.addProperty('process', function() {
     'expected process ##{this} to be running',
     'expected process ##{this} not to be running');
 });
+
+/**
+ * Cache-clearing plugin
+ */
+Nightmare.action(
+  'clearCache',
+  function(name, options, parent, win, renderer, done) {
+    parent.on('clearCache', function() {
+      parent.emit('log', 'Clearing cache');
+      win.webContents.session.clearCache(function() {
+        parent.emit('clearCache');
+      });
+    });
+    done();
+  },
+  function(done) {
+    this.child.once('clearCache', function() {
+      done();
+    });
+    this.child.emit('clearCache');
+    return this;
+  });
