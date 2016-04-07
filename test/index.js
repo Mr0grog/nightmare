@@ -189,7 +189,7 @@ describe('Nightmare', function () {
     });
 
     it('should fail if navigating to an unknown protocol', function(done) {
-      nightmare.goto('fake-test-protocol://blahblahblah')
+      nightmare.goto('fake-protocol:blahblahblah')
         .then(function() {
           done(new Error('Navigation to an invalid protocol succeeded'));
         })
