@@ -77,9 +77,7 @@ describe('Nightmare', function () {
     var nightmare;
 
     beforeEach(function() {
-      nightmare = Nightmare({
-        webPreferences: {partition: 'test-partition' + Math.random()}
-      });
+      nightmare = Nightmare();
     });
 
     afterEach(function*() {
