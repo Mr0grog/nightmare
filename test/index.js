@@ -181,7 +181,6 @@ describe('Nightmare', function () {
 
     afterEach(function*() {
       yield nightmare.end();
-      Nightmare.resetActions();
     });
 
     it('should return data about the response', function*() {
@@ -453,17 +452,28 @@ describe('Nightmare', function () {
           win.webContents.session.webRequest.onBeforeRequest(
             ['*://localhost:*'],
             function(details, callback) {
-              setTimeout(() => win.webContents.stop(), 0);
+              if (win.shouldAbortRequests) {
+                setTimeout(() => win.webContents.stop(), 0);
+              }
               callback({cancel: false});
             }
           );
+          parent.respondTo('abortRequests', function(shouldAbort, done) {
+            win.shouldAbortRequests = shouldAbort;
+            done();
+          });
           done();
         },
         function() {
-          done();
+          if (arguments.length === 1) {
+            done = shouldAbort;
+            shouldAbort = true;
+          }
+          this.child.call('abortRequests', !!shouldAbort, done);
         });
 
       return Nightmare({gotoTimeout: 500})
+        .abortRequests()
         .goto(fixture('navigation'))
         .end()
         .then(function() {
@@ -1910,25 +1920,6 @@ function withDeprecationTracking(constructor) {
   Object.setPrototypeOf(newConstructor, constructor);
   return newConstructor;
 }
-
-/**
- * Make plugins resettable for tests
- */
-var _action = Nightmare.action;
-var _pluginNames = [];
-Nightmare.action = function (name) {
-  _pluginNames.push(name);
-  return _action.apply(this, arguments);
-};
-Nightmare.resetActions = function () {
-  _pluginNames.splice(0, _pluginNames.length).forEach((name) => {
-    delete this.prototype[name];
-  });
-  this.namespaces.splice(0, this.namespaces.length);
-  Object.keys(this.childActions).forEach((name) => {
-    delete this.childActions[name];
-  });
-};
 
 /**
  * Simple assertion for running processes
